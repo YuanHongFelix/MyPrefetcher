@@ -1,0 +1,8 @@
+Core_0_IPC : sum
+Core_0_L2C_load_miss : sum
+Core_0_L2C_prefetch_issued : sum
+Core_0_L2C_prefetch_filled : sum
+Core_0_L2C_prefetch_useful : sum
+Core_0_L2C_prefetch_useless : sum
+Core_0_L2C_prefetch_late : sum
+

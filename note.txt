@@ -1,0 +1,15 @@
+prefetches: 处理prefetch queue中entry的数量
+prefetch_hit:  sim_hit[cpu][2]处理prefetch queue时，在当前cache hit
+prefetch_miss: sim_miss[cpu][2],在fill时，根据MSHR中信息看是否是预取产生的。
+
+prefetch_requested: +1 when call function prefetch_line() each time.
+prefetch_issued: +1 when call prefetch_line() and PQ is not full
+prefetch_droped: +1 when call prefetch_line() and PQ is full
+prefetch_requested = prefetch_issued + prefetch_droped
+
+why issued but not filled ?
+
+prefetch_filled: +1 in function fill_cache() if the block is prefetched. 即填入cache的数量
+prefetch_useful:
+prefetch_useless:
+prefetch_late: access MSHR when read miss, if hit and the block is prefetched, +1

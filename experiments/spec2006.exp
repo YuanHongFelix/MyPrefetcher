@@ -1,0 +1,14 @@
+# configurations
+BASE = --warmup_instructions=100000000 --simulation_instructions=500000000
+NOPREF = --config=$(PYTHIA_HOME)/config/nopref.ini
+SMS_512 = --l2c_prefetcher_types=sms --config=/home/linyq/Pythia/config/motivation-sms-region512.ini
+SMS_1024 = --l2c_prefetcher_types=sms --config=/home/linyq/Pythia/config/motivation-sms-region1024.ini
+SMS_2048 = --l2c_prefetcher_types=sms --config=/home/linyq/Pythia/config/motivation-sms-region2048.ini
+SMS_4096 = --l2c_prefetcher_types=sms --config=/home/linyq/Pythia/config/motivation-sms-region4096.ini
+
+
+no                                              $(BASE) $(NOPREF)
+motivation-sms-region512                       $(BASE) $(SMS_512)
+motivation-sms-region1024                      $(BASE) $(SMS_1024)
+motivation-sms-region2048                      $(BASE) $(SMS_2048)
+motivation-sms-region4096                      $(BASE) $(SMS_4096)
