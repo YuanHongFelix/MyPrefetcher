@@ -64,22 +64,26 @@ bool Domino::match_second_address(uint64_t second_address, vector<uint64_t> &pre
         cout << "Replay::Successfully match 2nd address! Pointer=" << pointer
              << ", 1st_addr=" << hex << history_buffer[pointer - 1]
              << ", 2nd_addr=" << hex << history_buffer[pointer] << endl;
+        cout << "Replay::Create stream!" << endl;
       }
-      for (size_t i = 1; i <= degree; i++)
+      int i;
+      for (i = 1; i <= degree; i++)
       {
-        pref_addr.emplace_back(history_buffer[pointer + i]);
-        stream_address.insert(history_buffer[pointer + i]);
+        if (pointer + i < history_buffer.size())
+        {
+          pref_addr.emplace_back(history_buffer[pointer + i]);
+          stream_address.insert(history_buffer[pointer + i]);
+          if (debug_level >= 2)
+          {
+            cout << "Pointer=" << pointer + i << ", Address=0x" << hex << history_buffer[pointer + i] << endl;
+          }
+        }
+        else
+          break;
       }
 
-      active_stream.create_stream(Stream_data(pointer + degree - 1, stream_address));
-      if (debug_level >= 2)
-      {
-        cout << "Replay::Create stream!" << endl;
-        for (size_t i = 1; i <= degree; i++)
-        {
-          cout << "Pointer=" << pointer + i << ", Address=0x" << hex << history_buffer[pointer + i] << endl;
-        }
-      }
+      active_stream.create_stream(Stream_data(pointer + i, stream_address));
+
       return true;
     }
   }
@@ -115,10 +119,13 @@ void Domino::invoke_prefetcher(uint64_t pc, uint64_t address, uint8_t cache_hit,
   uint64_t block_address = address >> LOG2_BLOCK_SIZE;
   if (cache_hit && prefetched_address.find(block_address) == prefetched_address.end())
     return;
+  if (block_address == last_address)
+    return;
 
   if (debug_level >= 2)
   {
-    cout << endl << "Domino::access. Block_addr=0x" << hex << block_address << ", pc=0x" << hex << pc << endl;
+    cout << endl
+         << "Domino::access. Block_addr=0x" << hex << block_address << ", pc=0x" << hex << pc << endl;
   }
 
   // replay

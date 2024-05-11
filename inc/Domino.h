@@ -4,6 +4,7 @@
 #include <vector>
 #include "prefetcher.h"
 #include "cache.h"
+#include "algorithm"
 #include <map>
 #include <set>
 using namespace std;
@@ -122,15 +123,18 @@ public:
             if (stream[i].prefetched_addr.count(address) > 0)
             {
                 stream[i].prefetched_addr.erase(address);
-                stream[i].pointer++;
-                uint64_t new_prefetch_addr = (*history_buffer)[stream[i].pointer];
-                pref_addr.emplace_back(new_prefetch_addr);
-                stream[i].prefetched_addr.insert(new_prefetch_addr);
-                set_mru(i);
-                if (debug_level >= 2)
+                if (stream[i].pointer < history_buffer->size() - 1)
                 {
-                    cout << "Stream::Hit! Continue prefetch! pointer=" << dec << stream[i].pointer << ", address=0x" << hex << new_prefetch_addr << endl;
+                    stream[i].pointer++;
+                    uint64_t new_prefetch_addr = (*history_buffer)[stream[i].pointer];
+                    pref_addr.emplace_back(new_prefetch_addr);
+                    stream[i].prefetched_addr.insert(new_prefetch_addr);
+                    if (debug_level >= 2)
+                    {
+                        cout << "Stream::Hit! Continue prefetch! pointer=" << dec << stream[i].pointer << ", address=0x" << hex << new_prefetch_addr << endl;
+                    }
                 }
+                set_mru(i);
                 return true;
             }
         }
