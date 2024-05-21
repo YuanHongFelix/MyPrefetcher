@@ -101,7 +101,7 @@ cp replacement/${LLC_REPLACEMENT}.llc_repl replacement/llc_replacement.cc
 mkdir -p bin
 rm -f bin/champsim
 make clean
-make
+make -j
 
 # Sanity check
 echo ""
