@@ -24,6 +24,8 @@
 #include "rb.h"
 #include "isb.h"
 #include "Domino.h"
+#include "sisb.h"
+#include "sdomino.h"
 
 using namespace std;
 
@@ -31,13 +33,26 @@ namespace knob
 {
 	extern vector<string> l2c_prefetcher_types;
 }
+unordered_map<uint64_t, vector<uint64_t>> file_prefetcher;
 
-#define PC_RECORD
+// #define PC_RECORD
 // #define PC_FILTE
+#define FILE_PREFETCHER_DEGREE 2
 #define BAD_PC_THRESH 0.1
 
 #ifdef PC_FILTE
 vector<set<uint64_t>> bad_pc;
+#endif
+
+// #define PREFETCH_OUTPUT
+// #define LOAD_OUTPUT
+
+#ifdef PREFETCH_OUTPUT
+ofstream prefetch_output_file;
+#endif
+
+#ifdef LOAD_OUTPUT
+ofstream load_output_file;
 #endif
 
 #ifdef PC_RECORD
@@ -142,6 +157,22 @@ void CACHE::l2c_prefetcher_initialize()
 		pc_record.emplace_back(PC_Record());
 #endif
 
+#ifdef PREFETCH_OUTPUT
+		prefetch_output_file.open(knob::l2c_prefetcher_types[index] + "_prefetch_output.txt");
+		if (!prefetch_output_file.is_open())
+		{
+			exit(2);
+		}
+#endif
+
+#ifdef LOAD_OUTPUT
+		load_output_file.open("load_output.txt");
+		if (!load_output_file.is_open())
+		{
+			exit(2);
+		}
+#endif
+
 		if (!knob::l2c_prefetcher_types[index].compare("none"))
 		{
 			cout << "adding L2C_PREFETCHER: NONE" << endl;
@@ -236,6 +267,18 @@ void CACHE::l2c_prefetcher_initialize()
 			Domino *pref_domino = new Domino(knob::l2c_prefetcher_types[index], this);
 			prefetchers.push_back(pref_domino);
 		}
+		else if (!knob::l2c_prefetcher_types[index].compare("sisb"))
+		{
+			cout << "adding L2C_PREFETCHER: sisb" << endl;
+			sisb *pref_sisb = new sisb(knob::l2c_prefetcher_types[index], this);
+			prefetchers.push_back(pref_sisb);
+		}
+		else if (!knob::l2c_prefetcher_types[index].compare("sdomino"))
+		{
+			cout << "adding L2C_PREFETCHER: sdomino" << endl;
+			sdomino *pref_sdomino = new sdomino(knob::l2c_prefetcher_types[index], this);
+			prefetchers.push_back(pref_sdomino);
+		}
 		else if (!knob::l2c_prefetcher_types[index].compare("stride"))
 		{
 			cout << "adding L2C_PREFETCHER: Stride" << endl;
@@ -266,6 +309,34 @@ void CACHE::l2c_prefetcher_initialize()
 			AMPM *pref_ampm = new AMPM(knob::l2c_prefetcher_types[index]);
 			prefetchers.push_back(pref_ampm);
 		}
+		else if (!knob::l2c_prefetcher_types[index].compare("file"))
+		{
+			cout << "adding L2C_PREFETCHER: file" << endl;
+			uint64_t line_no = 0;
+			uint64_t instr_id, addr;
+			ifstream file_in("mlp_prefetch.txt");
+			while (file_in >> dec >> instr_id >> hex >> addr)
+			{
+				auto itr = file_prefetcher.find(instr_id);
+				if (itr == file_prefetcher.end())
+				{
+					file_prefetcher[instr_id] = vector<uint64_t>();
+					file_prefetcher[instr_id].push_back(addr);
+				}
+				else
+				{
+					if (file_prefetcher[instr_id].size() < FILE_PREFETCHER_DEGREE)
+					{
+						file_prefetcher[instr_id].push_back(addr);
+					}
+					else
+					{
+						cerr << "Exceeded max prefetch degree of " << FILE_PREFETCHER_DEGREE << " on line " << line_no << " for instr_id " << instr_id << endl;
+					}
+				}
+				line_no++;
+			}
+		}
 		else
 		{
 			cout << "unsupported prefetcher type " << knob::l2c_prefetcher_types[index] << endl;
@@ -276,8 +347,12 @@ void CACHE::l2c_prefetcher_initialize()
 	assert(knob::l2c_prefetcher_types.size() == prefetchers.size() || !knob::l2c_prefetcher_types[0].compare("none"));
 }
 
-uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
+uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint64_t instr_id, uint64_t curr_cycle)
 {
+#ifdef LOAD_OUTPUT
+	load_output_file << instr_id << ", " << curr_cycle << ", " << hex << addr << ", " << ip << dec << ", " << (int)cache_hit << endl;
+#endif
+
 	vector<uint64_t> pref_addr;
 	for (uint32_t index = 0; index < prefetchers.size(); ++index)
 	{
@@ -289,6 +364,20 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 		if (bad_pc[index].find(ip) != bad_pc[index].end())
 			continue;
 #endif
+		if (!knob::l2c_prefetcher_types[index].compare("file"))
+		{
+			auto itr = file_prefetcher.find(instr_id);
+			if (itr != file_prefetcher.end())
+			{
+				for (auto prefetch_addr : itr->second)
+				{
+					// cout << "Prefetch " << hex << prefetch_addr << dec << " for instr_id " << instr_id << endl;
+					prefetch_line(ip, addr, prefetch_addr, FILL_L2, 0);
+				}
+			}
+			continue;
+		}
+
 		if (knob::l2c_prefetcher_types[index].compare("ipcp"))
 		{
 			prefetchers[index]->invoke_prefetcher(ip, addr, cache_hit, type, pref_addr);
@@ -298,6 +387,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 			IPCP_L2 *pref_ipcp_L2 = (IPCP_L2 *)prefetchers[index];
 			pref_ipcp_L2->invoke_prefetcher(ip, addr, cache_hit, type, metadata_in, pref_addr);
 		}
+
 		if (knob::l2c_prefetcher_types[index].compare("spp_dev2") &&
 			knob::l2c_prefetcher_types[index].compare("spp_ppf_dev") &&
 			knob::l2c_prefetcher_types[index].compare("mlop") &&
@@ -308,6 +398,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 			knob::l2c_prefetcher_types[index].compare("ipcp") &&
 			!pref_addr.empty())
 		{
+			// Domino isb sdomino sisb
 			for (uint32_t addr_index = 0; addr_index < pref_addr.size(); ++addr_index)
 			{
 				prefetch_line(ip, addr, pref_addr[addr_index], FILL_L2, 0);
@@ -319,6 +410,14 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 			pc_record[index].prefetch(ip, addr >> LOG2_BLOCK_SIZE);
 		}
 #endif
+
+#ifdef PREFETCH_OUTPUT
+		for (size_t i = 0; i < pref_addr.size(); i++)
+		{
+			prefetch_output_file << dec << instr_id << " " << hex << pref_addr[i] << endl;
+		}
+#endif
+
 		pref_addr.clear();
 	}
 
@@ -397,6 +496,16 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 			{
 				Domino *pref_domino = (Domino *)prefetchers[index];
 				pref_domino->register_fill(addr, set, way, prefetch, evicted_addr);
+			}
+			if (!prefetchers[index]->get_type().compare("sisb"))
+			{
+				sisb *pref_sisb = (sisb *)prefetchers[index];
+				pref_sisb->register_fill(addr, set, way, prefetch, evicted_addr);
+			}
+			if (!prefetchers[index]->get_type().compare("sdomino"))
+			{
+				sdomino *pref_sdomino = (sdomino *)prefetchers[index];
+				pref_sdomino->register_fill(addr, set, way, prefetch, evicted_addr);
 			}
 		}
 	}

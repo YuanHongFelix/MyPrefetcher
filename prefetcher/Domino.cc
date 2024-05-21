@@ -71,7 +71,7 @@ bool Domino::match_second_address(uint64_t second_address, vector<uint64_t> &pre
       {
         if (pointer + i < history_buffer.size())
         {
-          pref_addr.emplace_back(history_buffer[pointer + i]);
+          pref_addr.emplace_back(history_buffer[pointer + i] << LOG2_BLOCK_SIZE);
           stream_address.insert(history_buffer[pointer + i]);
           if (debug_level >= 2)
           {
@@ -99,7 +99,7 @@ bool Domino::seach_first_address(uint64_t first_address, vector<uint64_t> &pref_
     match_candidate = &(index_table[first_address]);
     match_candidate_valid = true;
     uint64_t prefetched_addr = match_candidate->get_mru_addr();
-    pref_addr.emplace_back(prefetched_addr);
+    pref_addr.emplace_back(prefetched_addr << LOG2_BLOCK_SIZE);
     if (debug_level >= 2)
     {
       cout << "Replay::Successfully match 1st address! address=0x" << hex << first_address << ", mru_address=0x" << hex << prefetched_addr << endl;
@@ -138,8 +138,8 @@ void Domino::invoke_prefetcher(uint64_t pc, uint64_t address, uint8_t cache_hit,
   // prefetch
   for (size_t i = 0; i < pref_addr.size(); i++)
   {
-    parent->prefetch_line(pc, address, pref_addr[i] << LOG2_BLOCK_SIZE, FILL_L2, 0);
-    prefetched_address.insert(pref_addr[i]);
+    // parent->prefetch_line(pc, address, pref_addr[i] << LOG2_BLOCK_SIZE, FILL_L2, 0);
+    prefetched_address.insert(pref_addr[i] >> LOG2_BLOCK_SIZE);
   }
 
   // record
