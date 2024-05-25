@@ -204,6 +204,7 @@ void RB::access(uint64_t block_number, uint64_t pc)
         {
             cerr << "[RB] Hit FT!" << endl;
         }
+        count_eu_check++;
         /* move from filter table to accumulation table */
         uint64_t region_number = hash_index(entry->key, this->ft[ft_hit_level].get_index_len());
         int insert_at_level = ft_hit_level;
@@ -220,6 +221,7 @@ void RB::access(uint64_t block_number, uint64_t pc)
                 old_entry = this->at[ft_hit_level].erase(region_number - 1);
                 if (old_entry)
                 {
+                    count_region_expand++;
                     insert_at_level++;
                     region_insert >>= 1;
                     pc_trigger = old_entry->data.pc;
@@ -261,6 +263,7 @@ void RB::access(uint64_t block_number, uint64_t pc)
                 old_entry = this->at[ft_hit_level].erase(region_number + 1);
                 if (old_entry)
                 {
+                    count_region_expand++;
                     insert_at_level++;
                     region_insert >>= 1;
                     pc_trigger = old_entry->data.pc;
@@ -505,6 +508,7 @@ vector<bool> sub_vector_pb(const vector<bool> &v, int l, int r)
 
 void RB::insert_in_pht(const ATRB::Entry &entry, int at_level)
 {
+    count_su_check++;
     // cout << "insert_in_pht" << endl;
     uint64_t pc = entry.data.pc;
     int offset = entry.data.offset;
@@ -545,6 +549,7 @@ void RB::insert_in_pht(const ATRB::Entry &entry, int at_level)
                         cerr << "[RB] insert_in_pht: level change!" << endl;
                     }
                     this->pht[at_level - 1].insert(pc, address, sub_vector_pb(new_pattern, 0, new_pattern.size() / 2));
+                    count_region_shrink++;
                 }
                 else
                 {
@@ -566,6 +571,7 @@ void RB::insert_in_pht(const ATRB::Entry &entry, int at_level)
                         cerr << "[RB] insert_in_pht: level change!" << endl;
                     }
                     this->pht[at_level - 1].insert(pc, address, sub_vector_pb(new_pattern, new_pattern.size() / 2, new_pattern.size()));
+                    count_region_shrink++;
                 }
                 else
                 {
@@ -596,6 +602,7 @@ void RB::insert_in_pht(const ATRB::Entry &entry, int at_level)
                         cerr << "[RB] insert_in_pht: has half 0 or accuracy low!" << endl;
                         cerr << "[RB] insert_in_pht: level change!" << endl;
                     }
+                    count_region_shrink++;
                     if (compare_or_pb(new_pattern, old_pattern, 0, new_pattern.size() / 2))
                         this->pht[at_level - 1].insert(pc, address, vector_or_pb(new_pattern, old_pattern, 0, new_pattern.size() / 2));
                     else
@@ -630,6 +637,7 @@ void RB::insert_in_pht(const ATRB::Entry &entry, int at_level)
                         cerr << "[RB] insert_in_pht: has half 0 or accuracy low!" << endl;
                         cerr << "[RB] insert_in_pht: level change!" << endl;
                     }
+                    count_region_shrink++;
                     if (compare_or_pb(new_pattern, old_pattern, new_pattern.size() / 2, new_pattern.size()))
                         this->pht[at_level - 1].insert(pc, address, vector_or_pb(new_pattern, old_pattern, new_pattern.size() / 2, new_pattern.size()));
                     else
@@ -741,5 +749,8 @@ void RB::register_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefet
 
 void RB::dump_stats()
 {
-    // print_stats();
+    cout << "EU_check_num " << count_eu_check << endl
+         << "Region_expand_num " << count_region_expand << endl
+         << "SU_check_num " << count_su_check << endl
+         << "Region_shrink_num " << count_region_shrink << endl;
 }

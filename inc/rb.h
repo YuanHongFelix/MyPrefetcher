@@ -599,6 +599,12 @@ private:
     int default_insert_level;
     int debug_level = 0;
 
+    // stat
+    int count_eu_check = 0;
+    int count_region_expand = 0;
+    int count_su_check = 0;
+    int count_region_shrink = 0;
+
 };
 
 #endif /* RB_H */
