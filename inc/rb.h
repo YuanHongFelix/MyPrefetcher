@@ -559,6 +559,7 @@ public:
     void invoke_prefetcher(uint64_t pc, uint64_t address, uint8_t cache_hit, uint8_t type, std::vector<uint64_t> &pref_addr);
     void register_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr);
     void dump_stats();
+    void reset_stats();
     void print_config();
 
     /**
@@ -604,6 +605,7 @@ private:
     int count_region_expand = 0;
     int count_su_check = 0;
     int count_region_shrink = 0;
+    bool warmup_complete_reset = false;
 
 };
 

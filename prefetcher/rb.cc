@@ -710,6 +710,9 @@ vector<int> RB::vote(const vector<vector<bool>> &x)
 /* Base-class virtual function */
 void RB::invoke_prefetcher(uint64_t pc, uint64_t addr, uint8_t cache_hit, uint8_t type, std::vector<uint64_t> &pref_addr)
 {
+    if (all_warmup_complete && !warmup_complete_reset){
+        reset_stats();
+    }
     if (debug_level >= 2)
     {
         cerr << "CACHE::l2C_prefetcher_operate(addr=0x" << hex << addr << ", PC=0x" << pc << ", cache_hit=" << dec
@@ -753,4 +756,11 @@ void RB::dump_stats()
          << "Region_expand_num " << count_region_expand << endl
          << "SU_check_num " << count_su_check << endl
          << "Region_shrink_num " << count_region_shrink << endl;
+}
+
+void RB::reset_stats(){
+    count_eu_check = 0;
+    count_region_expand = 0;
+    count_su_check = 0;
+    count_region_shrink = 0;
 }
