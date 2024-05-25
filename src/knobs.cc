@@ -42,6 +42,26 @@ namespace knob
 	string next_line_trace_name = string("next_line_trace.csv");
 	uint32_t next_line_pref_degree = 1;
 
+	/* RB_L1 */
+	uint32_t rb_l1_levels = 3;
+	vector<uint32_t> rb_l1_region_size = {1024, 2048, 4096};
+	vector<uint32_t> rb_l1_pattern_len = {16, 32, 64};
+	uint32_t rb_l1_pc_width = 16;
+	vector<uint32_t> rb_l1_min_addr_width = {4, 5, 6};
+	uint32_t rb_l1_max_addr_width = 16;
+	vector<uint32_t> rb_l1_ft_size = {32, 32, 32};
+	vector<uint32_t> rb_l1_at_size = {64, 64, 64};
+	vector<uint32_t> rb_l1_pht_size = {2048, 2048, 2048};
+	uint32_t rb_l1_pht_ways = 16;
+	uint32_t rb_l1_pb_size = 128;
+	uint32_t rb_l1_default_insert_level = 0;
+	float rb_l1_l2c_thresh = 0.25;
+	float rb_l1_llc_thresh = 0.25;
+	float rb_l1_accuracy_thresh = 0.25;
+	float rb_l1_or_thresh = 0.25;
+	int rb_l1_pf_degree = -1;
+	uint32_t rb_l1_debug_level = 0;
+
 	/* SMS */
 	uint32_t sms_at_size = 32;
 	uint32_t sms_ft_size = 64;
@@ -462,6 +482,80 @@ int parse_knobs(void *user, const char *section, const char *name, const char *v
 	else if (MATCH("", "measure_cache_acc_epoch"))
 	{
 		knob::measure_cache_acc_epoch = atoi(value);
+	}
+
+/* RB_L1 */
+	else if (MATCH("", "rb_l1_levels"))
+	{
+		knob::rb_l1_levels = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_region_size"))
+	{
+		knob::rb_l1_region_size = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_pattern_len"))
+	{
+		knob::rb_l1_pattern_len = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_pc_width"))
+	{
+		knob::rb_l1_pc_width = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_min_addr_width"))
+	{
+		knob::rb_l1_min_addr_width = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_max_addr_width"))
+	{
+		knob::rb_l1_max_addr_width = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_ft_size"))
+	{
+		knob::rb_l1_ft_size = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_at_size"))
+	{
+		knob::rb_l1_at_size = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_pht_size"))
+	{
+		knob::rb_l1_pht_size = get_array_uint(value);
+	}
+	else if (MATCH("", "rb_l1_pht_ways"))
+	{
+		knob::rb_l1_pht_ways = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_pb_size"))
+	{
+		knob::rb_l1_pb_size = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_default_insert_level"))
+	{
+		knob::rb_l1_default_insert_level = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_l2c_thresh"))
+	{
+		knob::rb_l1_l2c_thresh = atof(value);
+	}
+	else if (MATCH("", "rb_l1_llc_thresh"))
+	{
+		knob::rb_l1_llc_thresh = atof(value);
+	}
+	else if (MATCH("", "rb_l1_accuracy_thresh"))
+	{
+		knob::rb_l1_accuracy_thresh = atof(value);
+	}
+	else if (MATCH("", "rb_l1_or_thresh"))
+	{
+		knob::rb_l1_or_thresh = atof(value);
+	}
+	else if (MATCH("", "rb_l1_pf_degree"))
+	{
+		knob::rb_l1_pf_degree = atoi(value);
+	}
+	else if (MATCH("", "rb_l1_debug_level"))
+	{
+		knob::rb_l1_debug_level = atoi(value);
 	}
 
 	/* next-line */

@@ -1,8 +1,8 @@
-#ifndef RB_H
-#define RB_H
+#ifndef RB_L1_H
+#define RB_L1_H
 
-// #define SHORT_ACCUMULATION_RB
-#define ACCURACY_LEVELDOWN_RB
+// #define SHORT_ACCUMULATION_RB_L1
+#define ACCURACY_LEVELDOWN_RB_L1
 
 #include <vector>
 #include <unordered_map>
@@ -15,7 +15,7 @@
 using namespace std;
 
 template <class T>
-string rb_pattern_to_string(const vector<T> &pattern)
+string rb_l1_pattern_to_string(const vector<T> &pattern)
 {
     ostringstream oss;
     for (unsigned i = 0; i < pattern.size(); i += 1)
@@ -23,7 +23,7 @@ string rb_pattern_to_string(const vector<T> &pattern)
     return oss.str();
 }
 
-class FTDataRB
+class FTDataRB_L1
 {
 public:
     uint64_t pc;
@@ -31,12 +31,12 @@ public:
     vector<bool> pattern_prefetch;
 };
 
-class FTRB : public LRUSetAssociativeCache<FTDataRB>
+class FTRB_L1 : public LRUSetAssociativeCache<FTDataRB_L1>
 {
-    typedef LRUSetAssociativeCache<FTDataRB> Super;
+    typedef LRUSetAssociativeCache<FTDataRB_L1> Super;
 
 public:
-    FTRB(int size, int pattern_len, int debug_level = 0, int num_ways = 16) : Super(size, num_ways, debug_level), pattern_len(pattern_len)
+    FTRB_L1(int size, int pattern_len, int debug_level = 0, int num_ways = 16) : Super(size, num_ways, debug_level), pattern_len(pattern_len)
     {
         // assert(__builtin_popcount(size) == 1);
         if (this->debug_level >= 1)
@@ -67,7 +67,7 @@ public:
         if (this->debug_level >= 2)
             cerr << "FT::insert(region_number=0x" << hex << region_number << ", pc=0x" << pc
                  << ", offset=" << dec << offset << ")"
-                 << ", pattern_prefetch=" << rb_pattern_to_string(pattern_prefetch)
+                 << ", pattern_prefetch=" << rb_l1_pattern_to_string(pattern_prefetch)
                  << dec << endl;
         uint64_t key = this->build_key(region_number);
         // assert(!Super::find(key));
@@ -97,7 +97,7 @@ private:
         table.set_cell(row, 0, key);
         table.set_cell(row, 1, entry.data.pc);
         table.set_cell(row, 2, entry.data.offset);
-        table.set_cell(row, 3, rb_pattern_to_string(entry.data.pattern_prefetch));
+        table.set_cell(row, 3, rb_l1_pattern_to_string(entry.data.pattern_prefetch));
     }
 
     uint64_t build_key(uint64_t region_number)
@@ -115,7 +115,7 @@ private:
     /*==========================================================*/
 };
 
-class ATDataRB
+class ATDataRB_L1
 {
 public:
     uint64_t pc;
@@ -124,12 +124,12 @@ public:
     vector<bool> pattern_prefetch;
 };
 
-class ATRB : public LRUSetAssociativeCache<ATDataRB>
+class ATRB_L1 : public LRUSetAssociativeCache<ATDataRB_L1>
 {
-    typedef LRUSetAssociativeCache<ATDataRB> Super;
+    typedef LRUSetAssociativeCache<ATDataRB_L1> Super;
 
 public:
-    ATRB(int size, int pattern_len, int debug_level = 0, int num_ways = 16)
+    ATRB_L1(int size, int pattern_len, int debug_level = 0, int num_ways = 16)
         : Super(size, num_ways, debug_level), pattern_len(pattern_len)
     {
         // assert(__builtin_popcount(size) == 1);
@@ -168,7 +168,7 @@ public:
         if (this->debug_level >= 2)
             cerr << "AT::insert(region_number=0x" << hex << region_number << ", pc=0x" << pc
                  << ", offset=" << dec << offset
-                 << ", pattern_prefetch=" << rb_pattern_to_string(pattern_prefetch)
+                 << ", pattern_prefetch=" << rb_l1_pattern_to_string(pattern_prefetch)
                  << dec << endl;
         uint64_t key = this->build_key(region_number);
         // assert(!Super::find(key));
@@ -187,8 +187,8 @@ public:
         if (this->debug_level >= 2)
             cerr << "AT::insert(region_number=0x" << hex << region_number
                  << ", pc=0x" << pc << ", offset=" << dec << offset << dec
-                 << ", pattern=" << rb_pattern_to_string(pattern)
-                 << ", pattern_prefetch=" << rb_pattern_to_string(pattern_prefetch)
+                 << ", pattern=" << rb_l1_pattern_to_string(pattern)
+                 << ", pattern_prefetch=" << rb_l1_pattern_to_string(pattern_prefetch)
                  << endl;
         uint64_t key = this->build_key(region_number);
         // assert(!Super::find(key));
@@ -239,8 +239,8 @@ private:
         table.set_cell(row, 0, key);
         table.set_cell(row, 1, entry.data.pc);
         table.set_cell(row, 2, entry.data.offset);
-        table.set_cell(row, 3, rb_pattern_to_string(entry.data.pattern));
-        table.set_cell(row, 4, rb_pattern_to_string(entry.data.pattern_prefetch));
+        table.set_cell(row, 3, rb_l1_pattern_to_string(entry.data.pattern));
+        table.set_cell(row, 4, rb_l1_pattern_to_string(entry.data.pattern_prefetch));
     }
 
     uint64_t build_key(uint64_t region_number)
@@ -261,15 +261,15 @@ private:
     /*===============================================================*/
 };
 
-enum EventPB
+enum EventPB_L1
 {
-    PC_ADDRESS_PB = 0,
-    PC_OFFSET_PB = 1,
-    MISS_PB = 2
+    PC_ADDRESS_PB_L1 = 0,
+    PC_OFFSET_PB_L1 = 1,
+    MISS_PB_L1 = 2
 };
 
 template <class T>
-vector<T> rb_rotate(const vector<T> &x, int n)
+vector<T> rb_l1_rotate(const vector<T> &x, int n)
 {
     vector<T> y;
     int len = x.size();
@@ -279,18 +279,18 @@ vector<T> rb_rotate(const vector<T> &x, int n)
     return y;
 }
 
-class PHTDataRB
+class PHTDataRB_L1
 {
 public:
     vector<bool> pattern;
 };
 
-class PHTRB : public LRUSetAssociativeCache<PHTDataRB>
+class PHTRB_L1 : public LRUSetAssociativeCache<PHTDataRB_L1>
 {
-    typedef LRUSetAssociativeCache<PHTDataRB> Super;
+    typedef LRUSetAssociativeCache<PHTDataRB_L1> Super;
 
 public:
-    PHTRB(int size, int pattern_len, int pc_width, int min_addr_width, int max_addr_width, int debug_level = 0, int num_ways = 16)
+    PHTRB_L1(int size, int pattern_len, int pc_width, int min_addr_width, int max_addr_width, int debug_level = 0, int num_ways = 16)
         : Super(size, num_ways, debug_level), pattern_len(pattern_len), pc_width(pc_width), min_addr_width(min_addr_width), max_addr_width(max_addr_width)
     {
         // assert(this->pc_width >= 0);
@@ -311,10 +311,10 @@ public:
     {
         if (this->debug_level >= 2)
             cerr << "PHT::insert(pc=0x" << hex << pc << ", address=0x" << address
-                 << ", pattern=" << rb_pattern_to_string(pattern) << ")" << dec << endl;
+                 << ", pattern=" << rb_l1_pattern_to_string(pattern) << ")" << dec << endl;
         // assert((int)pattern.size() == this->pattern_len);
         int offset = address % this->pattern_len;
-        pattern = rb_rotate(pattern, -offset);
+        pattern = rb_l1_rotate(pattern, -offset);
         uint64_t key = this->build_key(pc, address);
         Super::insert(key, {pattern});
         Super::set_mru(key);
@@ -337,7 +337,7 @@ public:
         uint64_t min_tag_mask = (1 << (this->pc_width + this->min_addr_width - this->index_len)) - 1;
         uint64_t max_tag_mask = (1 << (this->pc_width + this->max_addr_width - this->index_len)) - 1;
         vector<vector<bool>> matches;
-        this->last_event = MISS_PB;
+        this->last_event = MISS_PB_L1;
         for (int i = 0; i < this->num_ways; i += 1)
         {
             if (!set[i].valid)
@@ -347,7 +347,7 @@ public:
             vector<bool> &cur_pattern = set[i].data.pattern;
             if (max_match)
             {
-                this->last_event = PC_ADDRESS_PB;
+                this->last_event = PC_ADDRESS_PB_L1;
                 Super::set_mru(set[i].key);
                 matches.clear();
                 matches.push_back(cur_pattern);
@@ -355,17 +355,17 @@ public:
             }
             if (min_match)
             {
-                this->last_event = PC_OFFSET_PB;
+                this->last_event = PC_OFFSET_PB_L1;
                 matches.push_back(cur_pattern);
             }
         }
         int offset = address % this->pattern_len;
         for (int i = 0; i < (int)matches.size(); i += 1)
-            matches[i] = rb_rotate(matches[i], +offset);
+            matches[i] = rb_l1_rotate(matches[i], +offset);
         return matches;
     }
 
-    EventPB get_last_event() { return this->last_event; }
+    EventPB_L1 get_last_event() { return this->last_event; }
 
     string log()
     {
@@ -394,7 +394,7 @@ private:
         table.set_cell(row, 0, pc);
         table.set_cell(row, 1, offset);
         table.set_cell(row, 2, address);
-        table.set_cell(row, 3, rb_pattern_to_string(entry.data.pattern));
+        table.set_cell(row, 3, rb_l1_pattern_to_string(entry.data.pattern));
     }
 
     uint64_t build_key(uint64_t pc, uint64_t address)
@@ -413,7 +413,7 @@ private:
 
     int pattern_len;
     int min_addr_width, max_addr_width, pc_width;
-    EventPB last_event;
+    EventPB_L1 last_event;
 
     /*======================================================*/
     /* Entry   = [tag, map, valid, LRU]                     */
@@ -422,19 +422,19 @@ private:
     /*======================================================*/
 };
 
-class PBDataRB
+class PBDataRB_L1
 {
 public:
     /* contains the prefetch fill level for each block of spatial region */
     vector<int> pattern;
 };
 
-class PBRB : public LRUSetAssociativeCache<PBDataRB>
+class PBRB_L1 : public LRUSetAssociativeCache<PBDataRB_L1>
 {
-    typedef LRUSetAssociativeCache<PBDataRB> Super;
+    typedef LRUSetAssociativeCache<PBDataRB_L1> Super;
 
 public:
-    PBRB(int size, int pattern_len, int pf_degree, int debug_level = 0, int num_ways = 16)
+    PBRB_L1(int size, int pattern_len, int pf_degree, int debug_level = 0, int num_ways = 16)
         : Super(size, num_ways, debug_level), pattern_len(pattern_len), pf_degree(pf_degree)
     {
         if (this->debug_level >= 1)
@@ -446,7 +446,7 @@ public:
     {
         if (this->debug_level >= 2)
             cerr << "PB::insert(region_number=0x" << hex << region_number
-                 << ", pattern=" << rb_pattern_to_string(pattern) << ")" << dec << endl;
+                 << ", pattern=" << rb_l1_pattern_to_string(pattern) << ")" << dec << endl;
         uint64_t key = this->build_key(region_number);
 
         Entry *entry = Super::find(key);
@@ -487,12 +487,9 @@ public:
                 cerr << "[PB::prefetch] No entry found." << dec << endl;
             return 0;
         }
-        
         Super::set_mru(key);
         int pf_issued = 0;
         vector<int> &pattern = entry->data.pattern;
-        if (this->debug_level >= 2)
-            cerr << "[PB::prefetch] Found! pattern: " << rb_pattern_to_string(pattern) << dec << endl;
         pattern[region_offset] = 0; /* accessed block will be automatically fetched if necessary (miss) */
         int pf_offset;
         /* prefetch blocks that are close to the recent access first (locality!) */
@@ -536,7 +533,7 @@ private:
     {
         uint64_t key = hash_index(entry.key, this->index_len);
         table.set_cell(row, 0, key);
-        table.set_cell(row, 1, rb_pattern_to_string(entry.data.pattern));
+        table.set_cell(row, 1, rb_l1_pattern_to_string(entry.data.pattern));
     }
 
     uint64_t build_key(uint64_t region_number) { return hash_index(region_number, this->index_len); }
@@ -551,11 +548,11 @@ private:
     /*======================================================*/
 };
 
-class RB : public Prefetcher
+class RB_L1 : public Prefetcher
 {
 public:
-    RB(string type, CACHE *cache);
-    ~RB();
+    RB_L1(string type, CACHE *cache);
+    ~RB_L1();
     void invoke_prefetcher(uint64_t pc, uint64_t address, uint8_t cache_hit, uint8_t type, std::vector<uint64_t> &pref_addr);
     void register_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr);
     void dump_stats();
@@ -580,7 +577,7 @@ private:
      */
     vector<int> find_in_pht(uint64_t pc, uint64_t address, int &next_ft_level);
 
-    void insert_in_pht(const ATRB::Entry &entry, int at_level);
+    void insert_in_pht(const ATRB_L1::Entry &entry, int at_level);
 
     vector<int> vote(const vector<vector<bool>> &x);
 
@@ -591,14 +588,14 @@ private:
     CACHE *parent = NULL;
     int32_t levels;
     vector<uint32_t> pattern_len;
-    vector<FTRB> ft;
-    vector<ATRB> at;
-    vector<PHTRB> pht;
-    PBRB pb;
+    vector<FTRB_L1> ft;
+    vector<ATRB_L1> at;
+    vector<PHTRB_L1> pht;
+    PBRB_L1 pb;
     float thresh;
     int default_insert_level;
     int debug_level = 0;
 
 };
 
-#endif /* RB_H */
+#endif /* RB_L1_H */

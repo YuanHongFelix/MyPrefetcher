@@ -5,6 +5,7 @@
 #include "next_line.h"
 #include "stride.h"
 #include "ipcp_L1.h"
+#include "rb_l1.h"
 
 using namespace std;
 
@@ -33,11 +34,17 @@ void CACHE::l1d_prefetcher_initialize()
 			StridePrefetcher *pref_stride = new StridePrefetcher(knob::l1d_prefetcher_types[index]);
 			l1d_prefetchers.push_back(pref_stride);
 		}
-      else if(!knob::l1d_prefetcher_types[index].compare("ipcp"))
+        else if(!knob::l1d_prefetcher_types[index].compare("ipcp"))
 		{
 			cout << "adding L1D_PREFETCHER: IPCP" << endl;
 			IPCP_L1 *pref_ipcp_l1 = new IPCP_L1(knob::l1d_prefetcher_types[index], this);
 			l1d_prefetchers.push_back(pref_ipcp_l1);
+		}
+		else if(!knob::l1d_prefetcher_types[index].compare("rb"))
+		{
+			cout << "adding L1D_PREFETCHER: rb" << endl;
+			RB_L1 *pref_rb_l1 = new RB_L1(knob::l1d_prefetcher_types[index], this);
+			l1d_prefetchers.push_back(pref_rb_l1);
 		}
 		else
 		{
@@ -56,6 +63,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
 	{
 		l1d_prefetchers[index]->invoke_prefetcher(ip, addr, cache_hit, type, pref_addr);
 		if(knob::l1d_prefetcher_types[index].compare("ipcp")
+		 && knob::l1d_prefetcher_types[index].compare("rb")
          && !pref_addr.empty())
 		{
 			for(uint32_t addr_index = 0; addr_index < pref_addr.size(); ++addr_index)
@@ -77,6 +85,11 @@ void CACHE::l1d_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way,
 			{
 				NextLinePrefetcher *pref_nl = (NextLinePrefetcher*)l1d_prefetchers[index];
 				pref_nl->register_fill(addr);
+			}
+			if(!l1d_prefetchers[index]->get_type().compare("rb"))
+			{
+				RB_L1 *pref_rb = (RB_L1*)l1d_prefetchers[index];
+				pref_rb->register_fill(addr, set, way, prefetch, evicted_addr);
 			}
 		}
 	}
