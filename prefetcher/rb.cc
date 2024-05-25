@@ -712,6 +712,7 @@ void RB::invoke_prefetcher(uint64_t pc, uint64_t addr, uint8_t cache_hit, uint8_
 {
     if (all_warmup_complete && !warmup_complete_reset){
         reset_stats();
+        warmup_complete_reset = true;
     }
     if (debug_level >= 2)
     {
@@ -755,7 +756,7 @@ void RB::dump_stats()
     cout << "EU_check_num " << count_eu_check << endl
          << "Region_expand_num " << count_region_expand << endl
          << "SU_check_num " << count_su_check << endl
-         << "Region_shrink_num " << count_region_shrink << endl;
+         << "Region_shrink_num " << count_region_shrink << endl << endl;
 }
 
 void RB::reset_stats(){
