@@ -107,8 +107,7 @@ void Bingo::access(uint64_t block_number, uint64_t pc)
       /* move from filter table to accumulation table */
       uint64_t region_number = hash_index(entry->key, this->filter_table.get_index_len());
       AccumulationTable::Entry victim =
-          this->accumulation_table.insert(region_number, entry->data.pc, entry->data.offset);
-      this->accumulation_table.set_pattern(region_number, region_offset);
+          this->accumulation_table.insert(region_number, entry->data.pc, entry->data.offset, region_offset);
       this->filter_table.erase(region_number);
       if (victim.valid)
       {
@@ -443,5 +442,16 @@ void Bingo::dump_stats()
          cerr << p << endl;
       }
    }
+#endif
+
+#ifdef TRACK_FIRST_USE
+   cerr << "AT_USE_COUNT " << accumulation_table.track_count << endl;
+   cerr << "AT_USE_CYCLE " << accumulation_table.track_cycle << endl;
+   cerr << "AT_USE_LATENCY " << (double)accumulation_table.track_cycle / (double)accumulation_table.track_count << endl;
+   cerr << "AT_MIN_USE_LATENCY " << accumulation_table.min_cycle << endl;
+   cerr << "PHT_USE_COUNT " << pht.track_count << endl;
+   cerr << "PHT_USE_CYCLE " << pht.track_cycle << endl;
+   cerr << "PHT_USE_LATENCY " << (double)pht.track_cycle / (double)pht.track_count << endl;
+   cerr << "PHT_MIN_USE_LATENCY " << pht.min_cycle << endl;
 #endif
 }

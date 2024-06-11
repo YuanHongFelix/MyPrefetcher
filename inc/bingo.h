@@ -12,6 +12,7 @@
 #include "bakshalipour_framework.h"
 
 // #define PATTERN_RECORD
+#define TRACK_FIRST_USE
 
 using namespace std;
 
@@ -114,6 +115,10 @@ public:
    uint64_t pc;
    int offset;
    vector<bool> pattern;
+
+#ifdef TRACK_FIRST_USE
+   uint64_t insert_cycle;
+#endif
 };
 
 class AccumulationTable : public LRUSetAssociativeCache<AccumulationTableData>
@@ -121,6 +126,12 @@ class AccumulationTable : public LRUSetAssociativeCache<AccumulationTableData>
    typedef LRUSetAssociativeCache<AccumulationTableData> Super;
 
 public:
+#ifdef TRACK_FIRST_USE
+   uint64_t track_count = 0;
+   uint64_t track_cycle = 0;
+   uint64_t min_cycle = 9999999999;
+#endif
+
    AccumulationTable(int size, int pattern_len, int debug_level = 0, int num_ways = 16)
        : Super(size, num_ways, debug_level), pattern_len(pattern_len)
    {
@@ -151,11 +162,22 @@ public:
       Super::set_mru(key);
       if (this->debug_level >= 2)
          cerr << "[AccumulationTable::set_pattern] OK!" << dec << endl;
+#ifdef TRACK_FIRST_USE
+      if (entry->data.insert_cycle > 0)
+      {
+         if (current_core_cycle[0] - entry->data.insert_cycle < min_cycle)
+            min_cycle = current_core_cycle[0] - entry->data.insert_cycle;
+         track_cycle += current_core_cycle[0] - entry->data.insert_cycle;
+         track_count++;
+         entry->data.insert_cycle = -1;
+      }
+#endif
+
       return true;
    }
 
    /* NOTE: `region_number` is probably truncated since it comes from the filter table */
-   Entry insert(uint64_t region_number, uint64_t pc, int offset)
+   Entry insert(uint64_t region_number, uint64_t pc, int offset, int offset2)
    {
       if (this->debug_level >= 2)
          cerr << "AccumulationTable::insert(region_number=0x" << hex << region_number << ", pc=0x" << pc
@@ -164,7 +186,12 @@ public:
       // assert(!Super::find(key));
       vector<bool> pattern(this->pattern_len, false);
       pattern[offset] = true;
+      pattern[offset2] = true;
+#ifdef TRACK_FIRST_USE
+      Entry old_entry = Super::insert(key, {pc, offset, pattern, current_core_cycle[0]});
+#else
       Entry old_entry = Super::insert(key, {pc, offset, pattern});
+#endif
       Super::set_mru(key);
       return old_entry;
    }
@@ -234,6 +261,10 @@ class PatternHistoryTableData
 {
 public:
    vector<bool> pattern;
+
+#ifdef TRACK_FIRST_USE
+   uint64_t insert_cycle;
+#endif
 };
 
 class PatternHistoryTable : public LRUSetAssociativeCache<PatternHistoryTableData>
@@ -241,6 +272,13 @@ class PatternHistoryTable : public LRUSetAssociativeCache<PatternHistoryTableDat
    typedef LRUSetAssociativeCache<PatternHistoryTableData> Super;
 
 public:
+
+#ifdef TRACK_FIRST_USE
+   uint64_t track_count = 0;
+   uint64_t track_cycle = 0;
+   uint64_t min_cycle = 9999999999;
+#endif
+
    PatternHistoryTable(int size, int pattern_len, int min_addr_width, int max_addr_width, int pc_width, int debug_level = 0, int num_ways = 16)
        : Super(size, num_ways, debug_level), pattern_len(pattern_len), min_addr_width(min_addr_width), max_addr_width(max_addr_width), pc_width(pc_width)
    {
@@ -267,7 +305,11 @@ public:
       int offset = address % this->pattern_len;
       pattern = my_rotate(pattern, -offset);
       uint64_t key = this->build_key(pc, address);
+#ifdef TRACK_FIRST_USE
+      Super::insert(key, {pattern, current_core_cycle[0]});
+#else
       Super::insert(key, {pattern});
+#endif
       Super::set_mru(key);
    }
 
@@ -296,6 +338,16 @@ public:
          vector<bool> &cur_pattern = set[i].data.pattern;
          if (max_match)
          {
+#ifdef TRACK_FIRST_USE
+            if (set[i].data.insert_cycle > 0)
+            {
+               if (current_core_cycle[0] - set[i].data.insert_cycle < min_cycle)
+                  min_cycle = current_core_cycle[0] - set[i].data.insert_cycle;
+               track_cycle += current_core_cycle[0] - set[i].data.insert_cycle;
+               track_count++;
+               set[i].data.insert_cycle = -1;
+            }
+#endif
             this->last_event = PC_ADDRESS;
             Super::set_mru(set[i].key);
             matches.clear();
@@ -304,6 +356,16 @@ public:
          }
          if (min_match)
          {
+#ifdef TRACK_FIRST_USE
+            if (set[i].data.insert_cycle > 0)
+            {
+               if (current_core_cycle[0] - set[i].data.insert_cycle < min_cycle)
+                  min_cycle = current_core_cycle[0] - set[i].data.insert_cycle;
+               track_cycle += current_core_cycle[0] - set[i].data.insert_cycle;
+               track_count++;
+               set[i].data.insert_cycle = -1;
+            }
+#endif
             this->last_event = PC_OFFSET;
             matches.push_back(cur_pattern);
          }
